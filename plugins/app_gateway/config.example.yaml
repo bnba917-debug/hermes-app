@@ -1,0 +1,66 @@
+# App Gateway 配置示例
+
+复制到 `~/.hermes/config.yaml` 的 `app_gateway:` 段，按需修改。
+**不要**把真实 API Key 写进 YAML；用户 onboarding 时自行填写，或放在 `~/.hermes/.env`。
+
+```yaml
+app_gateway:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8787
+
+  # 开发环境：固定验证码 111111；生产请改为 aliyun / tencent / twilio
+  auth_mode: dev
+  dev_sms_code: "111111"
+  expose_dev_code: true
+
+  # 生产务必设置强随机 JWT（也可用环境变量 APP_GATEWAY_JWT_SECRET）
+  jwt_secret: "change-me-to-a-long-random-string"
+
+  # PostgreSQL + Redis（见仓库根目录 docker-compose.app-gateway-postgres.yml）
+  postgres_url: "postgresql://hermes:hermes_dev@127.0.0.1:5432/hermes_app"
+  redis_url: "redis://127.0.0.1:6379/0"
+  postgres_only: true
+
+  # 每用户独立 API Key（推荐）
+  per_user_api_keys: true
+  fallback_global_credentials: false
+
+  max_concurrent_chats_per_user: 2
+
+  onboarding_models:
+    - id: deepseek-v4-flash
+      label: DeepSeek V4 Flash
+      provider: deepseek
+      api_key_env: DEEPSEEK_API_KEY
+      base_url: https://api.deepseek.com/v1
+    - id: kimi-k2.6
+      label: Kimi K2.6
+      provider: kimi-coding-cn
+      api_key_env: KIMI_CN_API_KEY
+      base_url: https://api.moonshot.cn/v1
+    - id: poolside/laguna-m.1:free
+      label: Laguna M.1 Free (OpenRouter)
+      provider: openrouter
+      api_key_env: OPENROUTER_API_KEY
+      base_url: https://openrouter.ai/api/v1
+```
+
+## 环境变量（仅密钥）
+
+在 `~/.hermes/.env` 中配置运营商 SMS 等密钥，例如：
+
+```bash
+# APP_GATEWAY_JWT_SECRET=your-secret
+# ALIYUN_SMS_ACCESS_KEY_ID=...
+# ALIYUN_SMS_ACCESS_KEY_SECRET=...
+```
+
+## 快速启动
+
+```bash
+docker compose -f docker-compose.app-gateway-postgres.yml up -d
+hermes app-gateway start
+```
+
+Flutter 客户端见 [flutter_app/README.md](flutter_app/README.md)。

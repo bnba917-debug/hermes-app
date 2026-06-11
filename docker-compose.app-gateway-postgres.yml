@@ -1,0 +1,77 @@
+# Local PostgreSQL + MinIO for Hermes App Gateway.
+#
+# Start:
+#   docker compose -f docker-compose.app-gateway-postgres.yml up -d
+#
+# Stop:
+#   docker compose -f docker-compose.app-gateway-postgres.yml down
+#
+# PostgreSQL connection string (copy into ~/.hermes/config.yaml → storage.postgres_url):
+#   postgresql://hermes:hermes_dev@127.0.0.1:5432/hermes
+#
+# MinIO (copy into ~/.hermes/config.yaml → app_gateway):
+#   workspace_backend: minio
+#   minio_endpoint: 127.0.0.1:9000
+#   minio_access_key: minioadmin
+#   minio_secret_key: minioadmin
+#   minio_bucket: hermes-workspaces
+#   Console UI: http://127.0.0.1:9001  (minioadmin / minioadmin)
+#
+# Redis (copy into ~/.hermes/config.yaml → app_gateway):
+#   redis_url: redis://127.0.0.1:6379/0
+#   redis_ttl_seconds: 86400
+#
+# Enables pg_trgm on first init (existing volumes: run scripts/postgres-init-extensions.sql manually).
+#
+# Dev-only credentials — do not expose this compose file on the public internet.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hermes-app-gateway-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: hermes
+      POSTGRES_PASSWORD: hermes_dev
+      POSTGRES_DB: hermes
+    volumes:
+      - hermes_app_gateway_pgdata:/var/lib/postgresql/data
+      - ./scripts/postgres-init-extensions.sql:/docker-entrypoint-initdb.d/01-extensions.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hermes -d hermes"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: hermes-app-gateway-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - hermes_app_gateway_minio:/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: hermes-app-gateway-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  hermes_app_gateway_pgdata:
+  hermes_app_gateway_minio:

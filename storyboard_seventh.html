@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>短剧：第七天 - 抖音爆款风格身份反转剧</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #0a0a1a; color: #eee; min-height: 100vh;
+  }
+  .header {
+    text-align: center; padding: 30px 20px 15px;
+    background: linear-gradient(135deg, #0a0a2e, #1a0a0a);
+    border-bottom: 2px solid #e94560;
+  }
+  .header h1 { font-size: 2em; color: #e94560; letter-spacing: 4px; }
+  .header .badge-row { margin-top: 10px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .header .badge {
+    display: inline-block; padding: 3px 14px; border-radius: 20px; font-size: 12px;
+    font-weight: bold;
+  }
+  .badge.red { background: #e94560; color: #fff; }
+  .badge.blue { background: #0f3460; color: #aaa; }
+  .badge.gold { background: #c09a2b; color: #fff; }
+
+  .ctrl-bar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,30,0.95); backdrop-filter: blur(10px);
+    padding: 10px 18px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid #1a1a3e; flex-wrap: wrap;
+  }
+  .ctrl-bar .time { font-size: 16px; font-weight: bold; color: #e94560; min-width: 55px; }
+  .ctrl-bar .progress { flex: 1; height: 5px; background: #2a2a4e; border-radius: 3px; cursor: pointer; position: relative; min-width: 60px; }
+  .ctrl-bar .progress .fill { height: 100%; width: 0%; background: linear-gradient(90deg, #e94560, #ff6b6b); border-radius: 3px; transition: width 0.2s; }
+  .ctrl-btn {
+    background: #e94560; border: none; color: #fff; padding: 5px 16px;
+    border-radius: 18px; cursor: pointer; font-size: 12px; font-weight: bold;
+    transition: 0.2s;
+  }
+  .ctrl-btn:hover { background: #ff6b6b; transform: scale(1.05); }
+  .ctrl-btn.sec { background: #2a2a4e; }
+  .ctrl-btn.sec:hover { background: #3a3a5e; }
+
+  .container { max-width: 750px; margin: 0 auto; padding: 20px; }
+
+  /* 爆款标签 */
+  .viral-tag {
+    display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .viral-tag span {
+    background: rgba(233,69,96,0.1); border: 1px solid rgba(233,69,96,0.3);
+    padding: 4px 14px; border-radius: 20px; font-size: 12px; color: #e94560;
+  }
+
+  .scene {
+    background: rgba(15,15,40,0.85); border-radius: 14px; margin-bottom: 22px;
+    overflow: hidden; border: 1px solid #1a1a3e; transition: 0.4s;
+    opacity: 0.3; transform: scale(0.96);
+  }
+  .scene.active {
+    opacity: 1; transform: scale(1);
+    border-color: #e94560; box-shadow: 0 0 30px rgba(233,69,96,0.12);
+  }
+
+  .scene-head {
+    background: rgba(15,15,45,0.6); padding: 10px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .scene-head .time { color: #e94560; font-weight: bold; font-size: 13px; }
+  .scene-head .title { color: #888; font-size: 13px; }
+
+  .scene-body { padding: 16px; }
+
+  /* 分镜画面 */
+  .storyboard-img {
+    background: #050515; border-radius: 10px; padding: 14px;
+    margin-bottom: 12px; border: 1px solid #2a2a3e; text-align: center;
+    font-size: 13px; line-height: 1.8; color: #999;
+  }
+  .storyboard-img .emoji { font-size: 48px; display: block; margin-bottom: 6px; }
+
+  .line {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 5px 0; cursor: pointer; border-radius: 8px;
+    transition: 0.2s; padding: 5px 10px; margin: 0 -10px;
+  }
+  .line:hover { background: rgba(255,255,255,0.04); }
+  .line.speaking { background: rgba(233,69,96,0.1); }
+
+  .line .ava {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; margin-top: 2px;
+  }
+  .line .ava.f { background: rgba(255,107,157,0.15); }
+  .line .ava.m { background: rgba(79,195,247,0.15); }
+  .line .ava.o { background: rgba(255,213,79,0.15); }
+
+  .line .bub { flex: 1; }
+  .line .bub .spk { font-size: 11px; font-weight: bold; margin-bottom: 2px; }
+  .line .bub .spk.f { color: #ff6b9d; }
+  .line .bub .spk.m { color: #4fc3f7; }
+  .line .bub .spk.o { color: #ffd54f; }
+  .line .bub .txt {
+    font-size: 14px; line-height: 1.6; padding: 5px 10px;
+    border-radius: 6px; display: inline-block; max-width: 92%;
+    border-left: 3px solid transparent;
+  }
+  .line .bub .txt.f { border-left-color: #ff6b9d; }
+  .line .bub .txt.m { border-left-color: #4fc3f7; }
+  .line .bub .txt.o { border-left-color: #ffd54f; }
+
+  .action-line {
+    font-style: italic; color: #666; font-size: 12px; padding: 5px 10px 5px 14px;
+    margin: 5px 0; border-left: 2px solid #444; background: rgba(255,255,255,0.02);
+    border-radius: 0 6px 6px 0;
+  }
+
+  /* 关键帧提示 */
+  .keyframe {
+    text-align: center; padding: 10px; margin: 12px 0;
+    font-size: 14px; font-weight: bold; letter-spacing: 2px;
+    border-radius: 8px; position: relative;
+  }
+  .keyframe.hook {
+    background: linear-gradient(135deg, #e94560, #c0392b);
+    animation: pulse 1.5s infinite;
+  }
+  .keyframe.twist {
+    background: linear-gradient(135deg, #6a1b9a, #4527a0);
+  }
+  .keyframe.final {
+    background: linear-gradient(135deg, #1a1a2e, #0f3460);
+    border: 1px solid #e94560;
+  }
+  .keyframe .label { font-size: 10px; color: rgba(255,255,255,0.6); margin-bottom: 3px; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.01)} }
+
+  .footer { text-align: center; padding: 20px; color: #333; font-size: 12px; border-top: 1px solid #1a1a3e; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎬 第七天</h1>
+  <div class="badge-row">
+    <span class="badge red">🔥 身份反转</span>
+    <span class="badge blue">⏱ 50秒</span>
+    <span class="badge gold">⚡ 双重反转</span>
+  </div>
+</div>
+
+<div class="ctrl-bar">
+  <div class="time" id="clock">00:00</div>
+  <div class="progress" id="progressWrap">
+    <div class="fill" id="progressFill"></div>
+  </div>
+  <button class="ctrl-btn" id="playBtn">▶ 播放</button>
+  <button class="ctrl-btn sec" id="voiceBtn">🔊 女声</button>
+</div>
+
+<div class="container">
+
+<div class="viral-tag">
+  <span>🔥 抖音爆款结构</span>
+  <span>⚡ 前3秒钩子</span>
+  <span>🔄 身份双反转</span>
+  <span>💀 细思极恐结局</span>
+</div>
+
+<!-- 场景0：钩子 -->
+<div class="scene active" id="s0">
+  <div class="scene-head">
+    <span class="time">🔥 0:00 - 0:05 钩子</span>
+    <span class="title">【前3秒定生死】</span>
+  </div>
+  <div class="scene-body">
+    <div class="storyboard-img">
+      <span class="emoji">🌃📱</span>
+      深夜11:58 · 手机屏幕亮起<br>
+      女孩独居房间 · 镜头俯拍第一人称视角
+    </div>
+    <div class="keyframe hook">
+      <div class="label">🎣 前3秒钩子</div>
+      “我已经跟踪她第七天了。”
+    </div>
+    <div class="line" data-text="我已经跟踪她第七天了。">
+      <div class="ava m">👨</div>
+      <div class="bub"><div class="spk m">旁白（男主）</div><div class="txt m">我已经跟踪她第七天了。</div></div>
+    </div>
+    <div class="action-line">📱 镜头前景：手机屏幕显示女孩的微信聊天记录</div>
+  </div>
+</div>
+
+<!-- 场景1 -->
+<div class="scene" id="s1">
+  <div class="scene-head">
+    <span class="time">📖 0:05 - 0:20 铺垫</span>
+    <span class="title">观众以为：变态跟踪狂</span>
+  </div>
+  <div class="scene-body">
+    <div class="storyboard-img">
+      <span class="emoji">👀🌙</span>
+      窗外视角：男人躲在对面楼道偷看<br>
+      女孩在窗边打电话 · 看不见脸
+    </div>
+    <div class="line" data-text="她每天都是这个点回家，一个人，不开灯。">
+      <div class="ava m">👨</div>
+      <div class="bub"><div class="spk m">旁白</div><div class="txt m">她每天都是这个点回家，一个人，不开灯。</div></div>
+    </div>
+    <div class="action-line">🗣 女孩打电话声音传来："嗯…他还没发现…放心吧…"</div>
+    <div class="line" data-text="她在跟谁打电话？男朋友？">
+      <div class="ava m">👨</div>
+      <div class="bub"><div class="spk m">旁白</div><div class="txt m">她在跟谁打电话？男朋友？</div></div>
+    </div>
+    <div class="action-line">📸 男人举起手机拍照，镜头特写：他翻看女孩的社交主页</div>
+    <div class="keyframe twist">
+      <div class="label">🔍 细节暗示</div>
+      女孩相册里全是监控视角的照片 —— 她在拍谁？
+    </div>
+  </div>
+</div>
+
+<!-- 场景2：第一次反转 -->
+<div class="scene" id="s2">
+  <div class="scene-head">
+    <span class="time">⚡ 0:20 - 0:35 第一次反转</span>
+    <span class="title">观众以为：便衣警察</span>
+  </div>
+  <div class="scene-body">
+    <div class="storyboard-img">
+      <span class="emoji">📋👮</span>
+      男人回到车里 · 车内灯亮起<br>
+      副驾放着一件警服和一沓案件卷宗
+    </div>
+    <div class="line" data-text="已经一周了，她警惕性很高，但——我有的是时间。">
+      <div class="ava m">👨</div>
+      <div class="bub"><div class="spk m">旁白</div><div class="txt m">已经一周了，她警惕性很高，但——我有的是时间。</div></div>
+    </div>
+    <div class="action-line">📂 男人翻开卷宗，上面赫然写着女孩的名字和照片，标注"失踪案关键证人"</div>
+    <div class="line" data-text="报告队长，找到她了。她没事。明天收网。">
+      <div class="ava m">👨</div>
+      <div class="bub"><div class="spk m">男主（打电话）</div><div class="txt m">报告队长，找到她了。她没事。明天收网。</div></div>
+    </div>
+    <div class="action-line">📱 挂断电话，男人嘴角露出一丝不易察觉的笑</div>
+  </div>
+</div>
+
+<!-- 场景3：终极反转 -->
+<div class="scene" id="s3">
+  <div class="scene-head">
+    <span class="time">💥 0:35 - 0:50 终极反转</span>
+    <span class="title">你猜错了两次</span>
+  </div>
+  <div class="scene-body">
+    <div class="storyboard-img">
+      <span class="emoji">😨🔪</span>
+      男人脱下外套 · 手腕露出一个电子脚镣<br>
+      镜头往上推，他后颈有一个编号纹身
+    </div>
+    <div class="action-line">📱 手机弹出女孩的短信："哥，你真的收网吗？还是……你又想逃了？"</div>
+    <div class="line" data-text="（看完短信，沉默三秒，打字回）收。">
+      <div class="ava m">👨</div>
+      <div class="bub"><div class="spk m">男主</div><div class="txt m">（看完短信，沉默三秒，打字回）收。</div></div>
+    </div>
+    <div class="keyframe final">
+      <div class="label">💀 终极反转</div>
+      他不是警察，不是跟踪狂 —— 他是那个案件的唯一凶手，<br>
+      女孩是唯一活着的目击证人。<br>
+      这七天，他在等最后一个人出现。
+    </div>
+    <div class="action-line">🌃 画面切回女孩窗口，她站在窗边看着楼下的车。笑了。</div>
+    <div class="line" data-text="谢谢你来。等这一天，我比你更久。">
+      <div class="ava f">👩</div>
+      <div class="bub"><div class="spk f">女孩</div><div class="txt f">谢谢你来。等这一天，我比你更久。</div></div>
+    </div>
+    <div class="action-line">📴 画面骤黑。片尾字幕：「有些人躲了七年，有些人等了他七天。」</div>
+  </div>
+</div>
+
+<div class="keyframe final" style="margin-top:20px;">
+  <div class="label">🧠 反转逻辑拆解</div>
+  🔴 你以为他是跟踪狂 → 🔵 其实他是警察在找证人 → 💀 其实是凶手在找最后的目标<br>
+  👩 而那个"证人女孩"——她才是真正设局的那个人
+</div>
+
+</div>
+
+<div class="footer">
+  🎬 短剧《第七天》 · 基于抖音爆款身份反转结构 · 50秒 · 双重反转
+</div>
+
+<script>
+const synth = window.speechSynthesis;
+const lines = [];
+let playing = false, cur = -1, timer = null, voiceMode = 0;
+
+document.querySelectorAll('.line').forEach((el, i) => {
+  lines.push({ el, index: i, text: el.dataset.text, scene: el.closest('.scene') });
+});
+
+document.getElementById('playBtn').addEventListener('click', () => {
+  if (playing) {
+    playing = false; synth.cancel();
+    if (timer) { clearTimeout(timer); timer = null; }
+    document.querySelectorAll('.line.speaking').forEach(l => l.classList.remove('speaking'));
+    document.getElementById('playBtn').textContent = '▶ 播放';
+    return;
+  }
+  playing = true;
+  document.getElementById('playBtn').textContent = '⏸ 暂停';
+  if (cur < 0 || cur >= lines.length) cur = 0;
+  speakLine(cur);
+});
+
+document.getElementById('voiceBtn').addEventListener('click', () => {
+  voiceMode = (voiceMode + 1) % 2;
+  document.getElementById('voiceBtn').textContent = voiceMode === 0 ? '🔊 女声' : '🔊 男声';
+  if (playing) { playing = false; synth.cancel(); document.getElementById('playBtn').textContent = '▶ 播放'; }
+});
+
+function getVoice(gender) {
+  const v = synth.getVoices();
+  const zh = v.filter(vv => vv.lang.startsWith('zh'));
+  if (gender === 'f') return zh.find(vv => vv.name.includes('Xiaoxiao')) || zh[0] || v[0];
+  return zh.find(vv => vv.name.includes('Yunxi') || vv.name.includes('Kangkang')) || zh[1] || zh[0] || v[0];
+}
+
+function speakLine(idx) {
+  if (idx >= lines.length) {
+    playing = false; document.getElementById('playBtn').textContent = '▶ 重播';
+    return;
+  }
+  const l = lines[idx];
+  document.querySelectorAll('.line.speaking').forEach(x => x.classList.remove('speaking'));
+  l.el.classList.add('speaking');
+  document.querySelectorAll('.scene.active').forEach(s => s.classList.remove('active'));
+  l.scene.classList.add('active');
+  l.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(l.text);
+  u.lang = 'zh-CN'; u.rate = 1.0;
+  u.voice = voiceMode === 0 ? getVoice('f') : getVoice('m');
+  u.pitch = voiceMode === 0 ? 1.1 : 0.9;
+  u.onend = () => {
+    l.el.classList.remove('speaking');
+    cur = idx + 1;
+    const pct = lines.length > 0 ? ((cur) / lines.length) * 100 : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+    const sec = Math.floor((cur / lines.length) * 50);
+    document.getElementById('clock').textContent = String(Math.floor(sec/60)).padStart(2,'0') + ':' + String(sec%60).padStart(2,'0');
+    if (playing) timer = setTimeout(() => speakLine(cur), 500);
+  };
+  window.speechSynthesis.speak(u);
+}
+
+lines.forEach((l, i) => {
+  l.el.addEventListener('click', () => {
+    if (playing) { playing = false; synth.cancel(); document.getElementById('playBtn').textContent = '▶ 播放'; }
+    cur = i; speakLine(i);
+  });
+});
+
+document.getElementById('progressWrap').addEventListener('click', (e) => {
+  const r = e.currentTarget.getBoundingClientRect();
+  const p = (e.clientX - r.left) / r.width;
+  const idx = Math.floor(p * lines.length);
+  if (idx >= 0 && idx < lines.length) {
+    if (playing) { playing = false; synth.cancel(); document.getElementById('playBtn').textContent = '▶ 播放'; }
+    cur = idx; speakLine(idx);
+  }
+});
+
+if (synth.getVoices().length === 0) synth.onvoiceschanged = () => synth.getVoices();
+</script>
+</body>
+</html>

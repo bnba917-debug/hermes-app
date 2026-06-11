@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hermes App Admin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #15110d;
+        --card: #241f1a;
+        --border: #514536;
+        --gold: #d6b15f;
+        --text: #f8f1df;
+        --muted: #b9aa8b;
+        --danger: #f87171;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top, #3a2d18, var(--bg) 45%);
+        color: var(--text);
+      }
+      .wrap { max-width: 1280px; margin: 0 auto; padding: 28px; }
+      .top { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+      .brand { font-size: 24px; letter-spacing: 0.08em; color: var(--gold); font-weight: 700; }
+      .layout { display: grid; grid-template-columns: 280px 1fr; gap: 18px; margin-top: 22px; }
+      .card {
+        background: color-mix(in srgb, var(--card) 92%, transparent);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 0 18px 60px rgba(0,0,0,.25);
+      }
+      input, textarea, select {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #17130f;
+        color: var(--text);
+        padding: 10px 12px;
+        margin-top: 6px;
+        font: inherit;
+      }
+      textarea { min-height: 220px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; }
+      textarea.file-body { min-height: 120px; }
+      label { display: block; color: var(--muted); margin: 10px 0 0; font-size: 13px; }
+      button {
+        border: 1px solid var(--gold);
+        background: var(--gold);
+        color: #17130f;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button.secondary { background: transparent; color: var(--gold); }
+      button.danger { border-color: var(--danger); background: transparent; color: var(--danger); }
+      button.small { padding: 6px 10px; font-size: 12px; }
+      .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+      .muted { color: var(--muted); font-size: 13px; }
+      .error { color: var(--danger); margin-top: 12px; white-space: pre-wrap; }
+      .skill-item {
+        border: 1px solid transparent;
+        border-radius: 12px;
+        padding: 10px;
+        cursor: pointer;
+      }
+      .skill-item:hover, .skill-item.active { border-color: var(--border); background: #17130f; }
+      .file-row {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        margin-top: 10px;
+        background: #17130f;
+      }
+      .editor-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+      .section-title { margin: 18px 0 6px; font-size: 15px; color: var(--gold); }
+      @media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <div class="brand">HERMES APP ADMIN</div>
+          <div class="muted">独立后台 · 公共 Skills（SKILL.md + scripts / references / templates）</div>
+        </div>
+        <div class="row">
+          <button class="secondary" onclick="newSkill()">新建</button>
+          <button class="secondary" onclick="loadSkills()">刷新</button>
+        </div>
+      </div>
+
+      <div class="layout">
+        <aside class="card">
+          <h2>管理员登录</h2>
+          <label>用户名</label>
+          <input id="username" value="admin" autocomplete="username" />
+          <label>密码</label>
+          <input id="password" type="password" autocomplete="current-password" />
+          <div style="height: 10px"></div>
+          <button onclick="login()">登录</button>
+          <div id="loginError" class="error"></div>
+
+          <div class="section-title">公共 Skills</div>
+          <div id="skills"></div>
+        </aside>
+
+        <section class="card">
+          <h2>Skill 编辑器</h2>
+          <div class="muted">完整 skill 目录结构：根目录 `SKILL.md`，以及 `scripts/`、`references/`、`templates/` 等附属文件。</div>
+
+          <label>名称</label>
+          <input id="skillName" placeholder="customer-support" />
+
+          <label>SKILL.md</label>
+          <textarea id="skillMd" placeholder="---
+name: customer-support
+description: Customer support workflow.
+---
+
+# Customer Support Skill"></textarea>
+
+          <div class="section-title">附属文件</div>
+          <div class="row">
+            <button class="secondary small" onclick="addFileRow()">添加文件</button>
+            <label class="row" style="margin:0">
+              <input id="zipInput" type="file" accept=".zip" style="width:auto" />
+              <span class="muted">导入 ZIP（含 SKILL.md + scripts 等）</span>
+            </label>
+            <button class="secondary small" onclick="importZip()">导入</button>
+          </div>
+          <div id="files"></div>
+
+          <div style="height: 14px"></div>
+          <div class="row">
+            <button onclick="saveSkill()">发布 / 更新</button>
+            <button class="danger" onclick="deleteCurrentSkill()">删除</button>
+          </div>
+          <div id="saveError" class="error"></div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      let token = sessionStorage.getItem("app_admin_token") || "";
+      let currentSkillName = "";
+      let fileCounter = 0;
+
+      function headers(json = true) {
+        const h = {};
+        if (json) h["Content-Type"] = "application/json";
+        if (token) h["Authorization"] = "Bearer " + token;
+        return h;
+      }
+
+      function appendText(parent, tag, text, className) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        node.textContent = text || "";
+        parent.appendChild(node);
+        return node;
+      }
+
+      async function login() {
+        document.getElementById("loginError").textContent = "";
+        const resp = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: headers(),
+          body: JSON.stringify({
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value,
+          }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          document.getElementById("loginError").textContent = data.detail || "登录失败";
+          return;
+        }
+        token = data.access_token;
+        sessionStorage.setItem("app_admin_token", token);
+        await loadSkills();
+      }
+
+      function clearFiles() {
+        document.getElementById("files").innerHTML = "";
+        fileCounter = 0;
+      }
+
+      function addFileRow(path = "", content = "") {
+        const box = document.getElementById("files");
+        const row = document.createElement("div");
+        row.className = "file-row";
+        row.dataset.id = String(++fileCounter);
+
+        const pathLabel = document.createElement("label");
+        pathLabel.textContent = "相对路径（例如 scripts/setup.sh）";
+        const pathInput = document.createElement("input");
+        pathInput.className = "file-path";
+        pathInput.value = path;
+        pathInput.placeholder = "scripts/example.py";
+
+        const bodyLabel = document.createElement("label");
+        bodyLabel.textContent = "文件内容";
+        const bodyInput = document.createElement("textarea");
+        bodyInput.className = "file-body";
+        bodyInput.value = content;
+
+        const actions = document.createElement("div");
+        actions.className = "row";
+        actions.style.marginTop = "8px";
+        const remove = document.createElement("button");
+        remove.className = "danger small";
+        remove.textContent = "移除";
+        remove.onclick = () => row.remove();
+        actions.appendChild(remove);
+
+        row.append(pathLabel, pathInput, bodyLabel, bodyInput, actions);
+        box.appendChild(row);
+      }
+
+      function collectFiles() {
+        const files = {};
+        for (const row of document.querySelectorAll(".file-row")) {
+          const path = row.querySelector(".file-path").value.trim();
+          const content = row.querySelector(".file-body").value;
+          if (!path) continue;
+          files[path] = content;
+        }
+        return files;
+      }
+
+      function fillEditor(skill) {
+        currentSkillName = skill.name || "";
+        document.getElementById("skillName").value = skill.name || "";
+        document.getElementById("skillMd").value = skill.skill_md || "";
+        clearFiles();
+        const files = skill.files || {};
+        if (typeof files === "object" && !Array.isArray(files)) {
+          for (const [path, content] of Object.entries(files)) {
+            addFileRow(path, content);
+          }
+        }
+      }
+
+      function newSkill() {
+        currentSkillName = "";
+        document.getElementById("skillName").value = "";
+        document.getElementById("skillMd").value = "";
+        clearFiles();
+        addFileRow("scripts/example.py", "# helper script\n");
+        document.querySelectorAll(".skill-item").forEach((n) => n.classList.remove("active"));
+      }
+
+      async function loadSkillDetail(name) {
+        const resp = await fetch(`/api/skills/${encodeURIComponent(name)}`, {
+          headers: headers(false),
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || "加载失败");
+        fillEditor(data.skill || {});
+        document.querySelectorAll(".skill-item").forEach((n) => {
+          n.classList.toggle("active", n.dataset.name === name);
+        });
+      }
+
+      async function loadSkills() {
+        const box = document.getElementById("skills");
+        const resp = await fetch("/api/skills", { headers: headers(false) });
+        const data = await resp.json();
+        if (!resp.ok) {
+          box.innerHTML = "";
+          appendText(box, "p", data.detail || "请先登录", "error");
+          return;
+        }
+        box.innerHTML = "";
+        for (const skill of data.skills || []) {
+          const div = document.createElement("div");
+          div.className = "skill-item" + (skill.name === currentSkillName ? " active" : "");
+          div.dataset.name = skill.name;
+          appendText(div, "strong", skill.name);
+          appendText(
+            div,
+            "div",
+            `v${skill.version} · ${skill.status}` + (skill.files?.length ? ` · ${skill.files.length} files` : ""),
+            "muted",
+          );
+          appendText(div, "p", skill.description || "", "muted");
+          div.onclick = () => loadSkillDetail(skill.name);
+          box.appendChild(div);
+        }
+      }
+
+      async function saveSkill() {
+        document.getElementById("saveError").textContent = "";
+        const resp = await fetch("/api/skills", {
+          method: "POST",
+          headers: headers(),
+          body: JSON.stringify({
+            name: document.getElementById("skillName").value,
+            skill_md: document.getElementById("skillMd").value,
+            files: collectFiles(),
+          }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          document.getElementById("saveError").textContent = data.detail || "保存失败";
+          return;
+        }
+        currentSkillName = data.skill?.name || "";
+        await loadSkills();
+        if (currentSkillName) await loadSkillDetail(currentSkillName);
+      }
+
+      async function deleteCurrentSkill() {
+        const name = document.getElementById("skillName").value.trim();
+        if (!name) return;
+        if (!confirm(`删除公共 skill ${name}?`)) return;
+        await fetch(`/api/skills/${encodeURIComponent(name)}`, {
+          method: "DELETE",
+          headers: headers(false),
+        });
+        newSkill();
+        await loadSkills();
+      }
+
+      async function importZip() {
+        document.getElementById("saveError").textContent = "";
+        const input = document.getElementById("zipInput");
+        if (!input.files?.length) {
+          document.getElementById("saveError").textContent = "请先选择一个 ZIP 文件";
+          return;
+        }
+        const form = new FormData();
+        form.append("archive", input.files[0]);
+        const resp = await fetch("/api/skills/import-zip", {
+          method: "POST",
+          headers: token ? { Authorization: "Bearer " + token } : {},
+          body: form,
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          document.getElementById("saveError").textContent = data.detail || "导入失败";
+          return;
+        }
+        fillEditor(data.skill || {});
+        currentSkillName = data.skill?.name || "";
+        input.value = "";
+        await loadSkills();
+      }
+
+      if (token) loadSkills();
+    </script>
+  </body>
+</html>

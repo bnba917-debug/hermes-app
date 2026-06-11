@@ -1,0 +1,56 @@
+# Local Python env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Secrets & local Hermes profile (never commit)
+.env
+.env.local
+.env.*.local
+.hermes/
+**/.hermes/
+
+# IDE / editor
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs & temp
+*.log
+logs/
+tmp/
+temp/
+
+# Flutter / Dart build artifacts
+**/.dart_tool/
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+
+# Node
+node_modules/
+**/node_modules/
+.npm/
+
+# Docker local overrides
+docker-compose.override.yml
+
+# Local-only dev helpers (may read ~/.hermes credential pool)
+scripts/test_app_gateway_models_all_keys.py

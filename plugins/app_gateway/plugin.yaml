@@ -1,0 +1,37 @@
+name: app-gateway
+label: Hermes App Gateway
+kind: general
+version: 0.2.0
+description: >
+  Multi-user HTTP gateway for mobile/web apps: JWT identity injection,
+  per-user session and memory isolation, SSE streaming, optional Redis
+  hot cache, PostgreSQL audit, vector memory (FTS), config hot-reload,
+  and optional proxy to api_server.
+author: Hermes Agent
+requires_env:
+  - name: APP_GATEWAY_JWT_SECRET
+    description: "HS256 secret for end-user JWTs (required when app_gateway.require_jwt is true)"
+    prompt: "App gateway JWT secret"
+    password: true
+    category: setting
+optional_env:
+  - name: APP_GATEWAY_APP_KEY
+    description: "Service API key for backend-to-gateway calls"
+    prompt: "App gateway service key"
+    password: true
+    category: setting
+  - name: APP_GATEWAY_REDIS_URL
+    description: "Redis URL for session hot cache (optional)"
+    prompt: "Redis URL"
+    password: false
+    category: setting
+  - name: APP_GATEWAY_POSTGRES_URL
+    description: "PostgreSQL DSN for audit (audit_backend postgres or dual)"
+    prompt: "PostgreSQL URL"
+    password: true
+    category: setting
+  - name: APP_GATEWAY_API_SERVER_URL
+    description: "Upstream api_server base URL when proxy_to_api_server is true"
+    prompt: "API server URL"
+    password: false
+    category: setting

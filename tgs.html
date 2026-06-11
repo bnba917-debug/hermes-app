@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>杨进 - 面试架构图</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #1a2332;
+      --text: #e6edf3;
+      --muted: #8b9cb3;
+      --accent: #58a6ff;
+      --border: #30363d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 24px 32px 80px;
+      line-height: 1.6;
+    }
+    h1 { font-size: 1.75rem; border-bottom: 2px solid var(--accent); padding-bottom: 12px; }
+    h2 {
+      font-size: 1.35rem;
+      color: var(--accent);
+      margin-top: 48px;
+      padding: 12px 16px;
+      background: var(--card);
+      border-left: 4px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+    }
+    h3 { font-size: 1.05rem; color: var(--muted); margin-top: 24px; }
+    .tip {
+      background: #1c2a3a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .diagram {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 20px 0 32px;
+      overflow-x: auto;
+      box-shadow: 0 4px 24px rgba(0,0,0,.35);
+    }
+    .mermaid { display: flex; justify-content: center; }
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(15,20,25,.92);
+      backdrop-filter: blur(8px);
+      padding: 12px 0;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    nav a {
+      color: var(--accent);
+      margin-right: 16px;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    nav a:hover { text-decoration: underline; }
+    @media print {
+      body { background: #fff; color: #000; }
+      .diagram { box-shadow: none; border: 1px solid #ccc; }
+      nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <h1>面试架构图 · 杨进（大模型工程师）</h1>
+  <p style="color: var(--muted)">用浏览器打开本文件即可渲染交互图；面试前可截图或打印。与《面试准备-杨进-大模型工程师.md》配套使用。</p>
+
+  <nav>
+    <a href="#overview">总览</a>
+    <a href="#hermes-arch">Hermes 总体</a>
+    <a href="#hermes-seq">Hermes 时序</a>
+    <a href="#hermes-memory">Hermes 记忆</a>
+    <a href="#ragflow-arch">RAGFlow 总体</a>
+    <a href="#ragflow-ingest">RAGFlow 入库</a>
+    <a href="#ragflow-tenant">RAGFlow 租户</a>
+    <a href="#ragflow-k8s">RAGFlow K8s</a>
+    <a href="#semi-rag">半导体 RAG</a>
+    <a href="#bank-agent">银行 Agent</a>
+    <a href="#bank-hitl">银行 HITL</a>
+  </nav>
+
+  <h2 id="overview">0. 四大项目总览（面试白板图）</h2>
+  <div class="tip">口述顺序建议：银行 Agent → 半导体 RAG → RAGFlow → Hermes（由早到晚，或按岗位倒重讲 Hermes/RAGFlow）</div>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+    subgraph 2024["2024"]
+        B[银行多 Agent<br/>LangGraph + HITL]
+        S[半导体 RAG<br/>DeepSeek-V3 + CRAG]
+    end
+    subgraph 2025["2025"]
+        R[RAGFlow 企业化<br/>多租户 + K8s]
+    end
+    subgraph 2026["2026"]
+        H[Hermes 多用户<br/>App SDK + 记忆隔离]
+    end
+    B --> S --> R --> H
+    style H fill:#238636,color:#fff
+    style R fill:#1f6feb,color:#fff
+    style S fill:#8957e5,color:#fff
+    style B fill:#bf8700,color:#fff
+    </pre>
+  </div>
+
+  <h2 id="hermes-arch">1. Hermes · 总体架构（分层）</h2>
+  <div class="tip">强调：<strong>网关注入身份</strong> → <strong>单 Runtime 多用户</strong> → <strong>共享推理池</strong> → <strong>记忆按 user 隔离</strong><br/>
+  实现：<code>plugins/app_gateway</code> v0.2（JWT · Redis · PG 审计 · 向量记忆 · 配置热更新 · api_server 代理）</div>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TB
+    subgraph L1["接入层"]
+        APP["📱 移动 App"]
+        SDK["Hermes SDK<br/>REST / SSE / WebSocket"]
+    end
+    subgraph L2["网关层"]
+        GW["API Gateway"]
+        AUTH["JWT 解析<br/>user_id · session_id · device_id"]
+    end
+    subgraph L3["Agent 运行时"]
+        RT["Hermes Runtime"]
+        LG["LangGraph 编排"]
+        TOOL["Tool 执行器<br/>权限钩子"]
+    end
+    subgraph L4["数据与记忆"]
+        REDIS[("Redis<br/>会话热状态")]
+        PG[("PostgreSQL<br/>持久化 / 审计")]
+        VEC[("向量库<br/>Namespace / user")]
+    end
+    subgraph L5["推理层"]
+        VLLM["共享 LLM 推理池<br/>vLLM · 限流 · 熔断"]
+    end
+    subgraph L6["运营"]
+        CFG["配置中心<br/>Prompt / Tool 热更新"]
+        FB["反馈管道<br/>点赞 · 纠错 · 蒸馏"]
+    end
+    APP --> SDK --> GW --> AUTH --> RT
+    RT --> LG --> TOOL
+    LG --> REDIS & PG & VEC
+    LG --> VLLM
+    CFG -.-> RT
+    FB -.-> PG & VEC
+    </pre>
+  </div>
+
+  <h2 id="hermes-seq">2. Hermes · 一次对话时序图</h2>
+  <div class="tip">面试画这张图，体现你懂 <strong>流式</strong> 和 <strong>异步写记忆</strong></div>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant App as App
+    participant SDK as SDK
+    participant GW as Gateway
+    participant RT as Agent Runtime
+    participant R as Redis
+    participant V as 向量记忆
+    participant LLM as 推理池
+
+    App->>SDK: 发送消息 + session_id
+    SDK->>GW: HTTPS / SSE
+    GW->>GW: 解析 JWT，注入 user_id
+    GW->>RT: 转发请求
+    RT->>R: 加载会话上下文
+    RT->>V: 检索用户长期记忆 filter=user_id
+    RT->>LLM: 组装 Prompt 流式生成
+    loop 流式 Token
+        LLM-->>RT: delta
+        RT-->>SDK: SSE event
+        SDK-->>App: 渲染
+    end
+    opt 需要 Tool
+        RT->>RT: 执行 Tool 沙箱 user 上下文
+        RT->>LLM: 继续生成
+    end
+    RT-->>App: done
+    RT->>R: 更新会话 异步
+    RT->>V: 摘要写入长期记忆 异步
+    </pre>
+  </div>
+
+  <h2 id="hermes-memory">3. Hermes · 记忆分层（防串扰）</h2>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TB
+    subgraph UserA["用户 A"]
+        SA[Session A]
+        PA[Profile A]
+        VA[Vector NS: user_a]
+    end
+    subgraph UserB["用户 B"]
+        SB[Session B]
+        PB[Profile B]
+        VB[Vector NS: user_b]
+    end
+  RT[Agent Runtime 单实例]
+    RT --> SA & PA & VA
+    RT --> SB & PB & VB
+    SA -.->|禁止交叉读取| SB
+    VA -.->|检索必带 filter| VB
+    </pre>
+  </div>
+
+  <h2 id="ragflow-arch">4. RAGFlow 企业化 · 总体架构</h2>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TB
+    subgraph 用户接入
+        U[企业用户]
+        SSO[SSO / LDAP]
+        GW[API Gateway<br/>注入 tenant_id]
+    end
+    subgraph RAGFlow服务
+        API[RAGFlow API]
+        CHAT[对话 / 检索服务]
+        W1[Parse Worker]
+        W2[Embed Worker]
+    end
+    subgraph 存储
+        PG[(PostgreSQL<br/>元数据 + RBAC)]
+        MINIO[(MinIO<br/>租户前缀目录)]
+        MIL[(Milvus<br/>Collection/Partition)]
+        RD[(Redis<br/>队列 · 配额计数)]
+    end
+    U --> SSO --> GW --> API
+    API --> CHAT
+    API --> W1 & W2
+    W1 --> MINIO
+    W2 --> MIL
+    API --> PG
+    CHAT --> MIL
+    W1 & W2 --> RD
+    </pre>
+  </div>
+
+  <h2 id="ragflow-ingest">5. RAGFlow · 文档入库流水线</h2>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+    A[上传文件] --> B{租户配额 OK?}
+    B -->|否| X[拒绝]
+    B -->|是| C[写入 MinIO<br/>tenant/dataset/]
+    C --> D[消息队列<br/>优先级]
+    D --> E[Parse Worker<br/>解析切片]
+    E --> F[Embed Worker<br/>bge 向量化]
+    F --> G[(Milvus<br/>带 tenant 标签)]
+    G --> H[Webhook<br/>入库完成通知 OA]
+    </pre>
+  </div>
+
+  <h2 id="ragflow-tenant">6. RAGFlow · 三级租户模型</h2>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TB
+    T[Tenant 租户<br/>公司 / 大部门]
+    W1[Workspace 项目组 A]
+    W2[Workspace 项目组 B]
+    D1[Dataset 知识库 1]
+    D2[Dataset 知识库 2]
+    D3[Dataset 知识库 3]
+    T --> W1 & W2
+    W1 --> D1 & D2
+    W2 --> D3
+    D1 --> DOC1[Document → Chunk → Vector]
+    D2 --> DOC2[Document → Chunk → Vector]
+    D3 --> DOC3[Document → Chunk → Vector]
+    </pre>
+  </div>
+
+  <h2 id="ragflow-k8s">7. RAGFlow · K8s 部署拓扑</h2>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TB
+    ING[Ingress / Nginx]
+    subgraph K8s集群
+        API_POD[ragflow-api x N<br/>HPA]
+        WORK_POD[ragflow-worker x M<br/>HPA 按队列深度]
+        CHAT_POD[dialog-service]
+    end
+    subgraph 有状态
+        PG[(PostgreSQL)]
+        REDIS[(Redis)]
+        MINIO[(MinIO)]
+        MIL[(Milvus Cluster)]
+    end
+    ING --> API_POD & CHAT_POD
+    API_POD --> WORK_POD
+    API_POD --> PG & REDIS & MINIO
+    WORK_POD --> MINIO & MIL
+    CHAT_POD --> MIL & PG
+    </pre>
+  </div>
+
+  <h2 id="semi-rag">8. 半导体投研 RAG · 问答流水线</h2>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TB
+    Q[用户问题] --> R1{LangGraph<br/>路由哪个库?}
+    R1 --> HY[混合检索<br/>Dense bge + Sparse BM25]
+    HY --> RR[ReRanker 可选]
+    RR --> CRAG{CRAG<br/>文档相关?}
+    CRAG -->|否| RW[Query 改写]
+    RW --> HY
+    CRAG -->|是| GEN[DeepSeek-V3 生成<br/>带引用]
+    GEN --> ARAG{ARAG<br/>答案 grounded?}
+    ARAG -->|否| RW
+    ARAG -->|是| OUT[输出 + 溯源]
+    </pre>
+  </div>
+
+  <h2 id="bank-agent">9. 银行 · 主 Agent + 子 Agent 拓扑</h2>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TB
+    MAIN[主 Agent<br/>意图识别 · 路由]
+    MAIN --> ACC[账户子 Agent]
+    MAIN --> LOAN[贷款子 Agent]
+    MAIN --> WM[理财子 Agent]
+    MAIN --> DEP[存款子 Agent]
+    subgraph 子图模板
+        E[入口] --> D[决策 LLM]
+        D --> RO[只读 Tools]
+        D --> RS[敏感 Tools]
+        RS --> HITL[HITL 人工确认]
+        HITL --> X[退出]
+        RO --> X
+    end
+    ACC & LOAN & WM & DEP -.-> 子图模板
+    STACK[(dialog_stack<br/>任务栈)]
+    MAIN <--> STACK
+    </pre>
+  </div>
+
+  <h2 id="bank-hitl">10. 银行 · HITL 中断恢复时序</h2>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+    participant U as 用户/坐席
+    participant G as LangGraph
+    participant M as MemorySaver
+    participant T as 银行核心 Tool
+
+    U->>G: 办理购买理财
+    G->>G: 决策调用敏感 Tool
+    G->>M: interrupt_before 持久化 State
+    G-->>U: 展示确认页 暂停
+    U->>G: 人工确认通过 thread_id
+    G->>M: 恢复 State
+    G->>T: 执行 Tool
+    T-->>G: 结果
+    G-->>U: 返回办理结果
+    Note over G,M: 全链路审计日志
+    </pre>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "default",
+      securityLevel: "loose",
+      flowchart: { useMaxWidth: true, htmlLabels: true, curve: "basis" },
+      sequence: { useMaxWidth: true }
+    });
+  </script>
+</body>
+</html>

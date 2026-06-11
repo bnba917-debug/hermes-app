@@ -1,0 +1,15 @@
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+**/.dart_tool/chrome-device/
+**/GeneratedPluginRegistrant.java
+**/generated_plugin_registrant.dart
+*.iml
+.idea/
+.vscode/
+*.lock
+pubspec.lock
