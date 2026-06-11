@@ -55,6 +55,21 @@ flutter pub get && flutter run -d chrome
 
 本仓库 fork 自 [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)（MIT License）。完整 Agent 能力、CLI、Gateway 平台集成等请参阅上游文档。
 
+## 商务合作与联系
+
+欢迎就以下方向与我们交流：
+
+- **私有化部署**：单实例多用户 Gateway、PostgreSQL / Redis / MinIO 生产环境搭建与调优
+- **定制开发**：Flutter 客户端品牌化、短信登录对接、模型与工具链集成
+- **技术咨询**：架构评审、安全加固、性能与并发方案
+
+| 渠道 | 说明 |
+|------|------|
+| GitHub Issues | [提交 Bug / 功能建议](https://github.com/bnba917-debug/hermes-app/issues)（技术问题优先走此渠道，便于追踪） |
+| 微信 | `yj_15071534336`（添加时请备注 **hermes-app** 及合作方向） |
+
+> 个人微信仅用于商务沟通与试用交流，非实时技术支持；紧急问题请尽量通过 Issues 描述复现步骤。
+
 ## License
 
 MIT — 见 [LICENSE](LICENSE)。
