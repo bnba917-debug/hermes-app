@@ -2,6 +2,23 @@
 
 基于 [Hermes Agent](https://github.com/NousResearch/hermes-agent) 扩展的 **App Gateway** 方案：手机号注册登录、每用户独立工作区与 API Key、Flutter 跨端客户端。
 
+## 应用预览
+
+> 下方为 **界面预览图**（用于 README 宣传展示）。建议按 [截图指南](docs/screenshots/HOWTO.md) 替换为你本地运行的真实截图，效果更佳。
+
+<table>
+  <tr>
+    <td align="center"><b>登录</b><br/><img src="docs/screenshots/login.png" width="240" alt="登录页"/></td>
+    <td align="center"><b>模型配置</b><br/><img src="docs/screenshots/onboarding.png" width="240" alt="首次配置"/></td>
+    <td align="center"><b>AI 对话</b><br/><img src="docs/screenshots/chat.png" width="240" alt="对话界面"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>工具与文件</b><br/><img src="docs/screenshots/chat-files.png" width="240" alt="生成文件下载"/></td>
+    <td align="center"><b>会话管理</b><br/><img src="docs/screenshots/sessions.png" width="240" alt="会话列表"/></td>
+    <td align="center"><i>更多截图见 docs/screenshots/</i></td>
+  </tr>
+</table>
+
 ## 功能
 
 - 多用户 JWT 鉴权 + 手机号 OTP（开发模式可用固定验证码）
