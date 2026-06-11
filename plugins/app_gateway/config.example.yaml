@@ -26,7 +26,11 @@ app_gateway:
   per_user_api_keys: true
   fallback_global_credentials: false
 
-  max_concurrent_chats_per_user: 2
+  # 规模参考（单实例设计目标：1000+ 用户 / 100+ 聊天并发）
+  # 生产可按机器配置调高 agent 线程池与并发上限
+  max_concurrent_agents: 128          # 进程内同时进行中的 Agent 对话（建议 ≥ 100）
+  agent_executor_workers: 160
+  max_concurrent_chats_per_user: 2      # 单用户同时开几路对话
 
   onboarding_models:
     - id: deepseek-v4-flash

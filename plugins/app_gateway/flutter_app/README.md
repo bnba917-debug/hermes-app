@@ -1,12 +1,12 @@
 # Hermes App（Flutter）
 
-一套代码，运行在 **Web / iOS / Android**，对接 [App Gateway](../README.md)。
+一套代码，运行在 **Web / iOS / Android**，对接 [App Gateway](../README.md)。配合后端单实例架构，可支撑 **1000+ 注册用户**、**100+ 路聊天并发**。
 
 ## 功能
 
 - 手机号 + 验证码登录（开发码 `111111`）
 - 入驻：选择模型 + 填写 API Key
-- 聊天：SSE 流式输出
+- 聊天：SSE 流式输出，多用户同时在线互不干扰
 - 相册发图（多模态 `image_url`）
 - 录音 → STT → 发送（iOS/Android；Web 暂提示用文字）
 - TTS 播放最后一条回复（移动端本地文件）
